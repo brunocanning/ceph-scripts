@@ -57,6 +57,12 @@ def get_num_backfilling():
   print "get_num_backfilling: PGs currently backfilling: %s" % n
   return n
 
+def check_ceph_health():
+  cmd = "ceph health | awk '{print $1}'"
+  health_status = commands.getoutput(cmd)
+  print "ceph health status is: %s" % health_status
+  return health_status
+
 def crush_reweight(osd, weight, really):
   cmd = "ceph osd crush reweight %s %s &" % (osd, weight)
   print "crush_reweight: calling %s" % cmd
@@ -78,6 +84,13 @@ def reweight_osds(osds, max_pgs_backfilling, max_latency, delta_weight, target_w
   time_ok = in_timeframe(start_time, end_time, current_time, allowed_days, current_day)
   if not time_ok:
     print "current time: not within range %s - %s, trying again later" % (start_time, end_time)
+    return
+
+  # check ceph health
+  health = check_ceph_health()
+  print "cluster health is %s" health_status
+  if health != 'HEALTH_OK':
+    print "cluster is not healthy"
     return
 
   # check num pgs backfilling
